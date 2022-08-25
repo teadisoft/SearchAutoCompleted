@@ -1,0 +1,235 @@
+﻿@page "/autoCompleted"
+
+<h3>AutoCompleteText</h3>
+@*<input @bind="SearchWord" @bind:event="oninput"/>*@
+@*<input @bind-value="SearchWord" @onkeypress="GoSearch"/>*@
+<input @bind="SearchWord" @bind:event="oninput" @onkeyup="GoSearch"/>
+
+<div style="display:grid; grid-template-columns:200px 150px 150px 200px; grid-gap:15px;">
+    @foreach(var weathaer in WeatherForcastS)
+    {
+        <div>@weathaer.Date</div>
+        <div>@weathaer.TempC</div>
+        <div>@weathaer.TempF</div>
+        <div>@weathaer.Region</div>
+       @* <div>
+            <select onchange="">
+                @foreach(var role in Roles)
+                {
+                    <option>@role.Role</option>
+                }
+                
+            </select>   
+        </div>*@
+    }
+</div>
+
+<br/><br/><br/>
+<h3>Member</h3>
+<input @bind="Name" @bind:event="oninput" @onkeyup="GoUserSearch"/>
+<div style="display:grid; grid-template-columns:80px 150px 200px 30px; grid-gap:15px;">
+        @if(ResultList != null)
+        {
+            @foreach(var member in ResultList)
+            {
+                <div>@member.MemberId</div>
+                <div>@member.MemberName</div>
+                <div>
+                    <select onchange="">
+                        @foreach(var role in Roles)
+                        {
+                            <option>@role.Role</option>
+                        }
+                
+                    </select>
+                </div>
+                <div><a @onclick="(()=>OnDeleteUser(member))" style="cursor:unset">X</a></div>
+            }
+        }
+</div>
+<br/><br/><br/>
+@code {
+    List<Member> ResultList = new List<Member>(); 
+    public IEnumerable<WeatherForcast> WeatherForcastS { get; set; }
+    public IEnumerable<Member> Members { get; set; }
+    public IEnumerable<UserRole> Roles { get; set; }
+    List<Member> tmpMembers = new List<Member>();
+
+    private string _searchWord = string.Empty;
+    public string SearchWord 
+    {
+        get { return _searchWord;}
+        set { _searchWord = value; }
+    }
+
+    private string _name = string.Empty;
+    public string Name 
+    {
+        get { return _name;}
+        set { _name = value; }
+    }
+
+    public void GoSearch()
+    {
+        WeatherForcastS = WeatherForcastS.Where(x => x.Region.Contains(SearchWord) || x.Date.Contains(SearchWord));
+    }
+
+    public void GoUserSearch()
+    {
+        if (string.IsNullOrEmpty(Name))
+        {
+            ResultList = tmpMembers;
+        }
+        else
+        {
+            if (tmpMembers.Count == 0)
+            {
+                CopyTmpMember();
+                ResultList = tmpMembers;
+            }
+            else
+            {
+                ResultList = Members.ToList();
+            }
+        }
+
+        if(Name.Contains(','))
+        {
+            string[] names = Name.Split(',');
+
+            foreach (string name in names)
+            {
+                foreach (var origin in Members)
+                {
+                    bool isExist = tmpMembers.Select(x => x.MemberId == origin.MemberId).FirstOrDefault();
+
+                    if (!isExist)
+                        tmpMembers.Add(origin);
+
+                    ResultList = tmpMembers;
+                    break;
+                }
+            }            
+        }
+
+        ResultList = ResultList.Where(x => x.MemberId.Contains(Name) || x.MemberName.Contains(Name)).ToList();
+    }
+
+    protected override Task OnInitializedAsync()
+    {
+        WeatherForcastS = GetWeatherForcasts();
+        Members = GetMembers();
+        CopyTmpMember();
+        Roles = GetRoles();
+
+        return base.OnInitializedAsync();
+    }
+
+    public void CopyTmpMember()
+    { 
+        foreach (var member in Members)
+        {
+            tmpMembers.Add(member);
+        }
+    }
+
+    public IEnumerable<WeatherForcast> GetWeatherForcasts()
+    {
+        IEnumerable<WeatherForcast> list = new List<WeatherForcast>()
+        {
+            new WeatherForcast() { Code = "C01", Date = "2022.08.22", TempF=0, TempC=0, Region="Suoul" },
+            new WeatherForcast() { Code = "C02", Date = "2022.08.23", TempF=0, TempC=0, Region="Inchun" },
+            new WeatherForcast() { Code = "D03", Date = "2022.08.24", TempF=0, TempC=0, Region="Suwon" },
+            new WeatherForcast() { Code = "B01", Date = "2022.08.25", TempF=0, TempC=0, Region="NewYork" },
+            new WeatherForcast() { Code = "A03", Date = "2022.08.26", TempF=0, TempC=0, Region="LA" },
+            new WeatherForcast() { Code = "D05", Date = "2022.08.27", TempF=0, TempC=0, Region="AhnSan" },
+            new WeatherForcast() { Code = "F01", Date = "2022.08.28", TempF=0, TempC=0, Region="Chicago" },
+            new WeatherForcast() { Code = "G88", Date = "2022.08.29", TempF=0, TempC=0, Region="Dae-gu" },
+            new WeatherForcast() { Code = "C91", Date = "2022.08.30", TempF=0, TempC=0, Region="Rotterdam" },
+            new WeatherForcast() { Code = "T01", Date = "2022.08.31", TempF=0, TempC=0, Region="Calgary" },
+            new WeatherForcast() { Code = "I19", Date = "2022.09.01", TempF=0, TempC=0, Region="pattaya" },
+            new WeatherForcast() { Code = "E11", Date = "2022.09.02", TempF=0, TempC=0, Region="Miami" },
+            new WeatherForcast() { Code = "Z99", Date = "2022.09.03", TempF=0, TempC=0, Region="Busan" },
+            new WeatherForcast() { Code = "F30", Date = "2022.09.04", TempF=0, TempC=0, Region="Nagasaki" },
+        };
+
+        foreach (var tep in list)
+        {
+            tep.TempC = GetRandomSu();
+            tep.TempF = GetRandomSu();
+        }
+
+        return list;
+    }
+
+    public int GetRandomSu()
+    {
+        int rtnSu = 0;
+
+        for (int i = 0; i < 10; i++)
+        {
+            rtnSu = Random.Shared.Next(1, 100);
+        }
+
+        return rtnSu;
+    }
+
+    public IEnumerable<Member> GetMembers()
+    {
+        IEnumerable<Member> memList = new List<Member>()
+        {
+            new Member() { MemberId = "01", MemberName ="선동열" },
+            new Member() { MemberId = "02", MemberName ="김기태" },
+            new Member() { MemberId = "03", MemberName ="이만수" },
+            new Member() { MemberId = "04", MemberName ="박동희" },
+            new Member() { MemberId = "05", MemberName ="박찬호" },
+            new Member() { MemberId = "06", MemberName ="김병현" },
+            new Member() { MemberId = "07", MemberName ="서재응" },
+            new Member() { MemberId = "08", MemberName ="김선우" },
+        };
+
+        //ResultList = memList.ToList();
+
+        return memList;
+    }
+
+    public IEnumerable<UserRole> GetRoles()
+    {
+        IEnumerable<UserRole> roles = new List<UserRole>()
+        {
+            new UserRole() { Role = "Viewer" },
+            new UserRole() { Role = "Manager" },
+            new UserRole() { Role = "Supervisor" },
+        };
+
+        return roles;
+    }
+
+    public void OnDeleteUser(Member mem)
+    {
+        tmpMembers.Remove(mem);
+        ResultList = tmpMembers.ToList();
+    }
+
+    public class WeatherForcast
+    {
+        public string Code { get; set; }
+        public string Date {get;set;}
+        public int TempF { get; set; }    
+        public int TempC { get; set; }    
+        public string Region { get; set; }
+    }
+
+    public class Member
+    {
+        public string MemberId { get; set; }
+        public string WeatherCode { get; set; }
+        public string MemberName { get; set; }
+        public string Role { get; set; }
+    }
+
+    public class UserRole
+    {   
+        public string Role { get; set; }      
+    }
+}
